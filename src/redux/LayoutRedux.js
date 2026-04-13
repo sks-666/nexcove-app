@@ -1,10 +1,29 @@
 /** @format */
 
 import { flatten } from 'lodash';
-import { WooWorker } from 'api-ecommerce';
-
 import { HorizonLayouts, Languages, Constants } from '@common';
+import ProductAPI from '@services/ProductAPI';
 import { getAppConfigJson } from '@app/services/Utils';
+
+
+const mapNetworkErrorMessage = error => {
+  if (!error) {
+    return Languages.ProductsLoadError;
+  }
+
+  switch (error.type) {
+    case 'NETWORK_ERROR':
+      return Languages.NoConnection;
+    case 'TIMEOUT_ERROR':
+      return Languages.RequestTakingTooLong;
+    case 'HTTP_ERROR':
+      return error.status >= 500
+        ? Languages.ServerErrorTryLater
+        : error.message || Languages.ProductsLoadError;
+    default:
+      return error.message || Languages.ProductsLoadError;
+  }
+};
 
 const types = {
   LAYOUT_FETCH_SUCCESS: 'LAYOUT_FETCH_SUCCESS',
@@ -15,6 +34,7 @@ const types = {
   LAYOUT_HOME_FETCHING: 'LAYOUT_HOME_FETCHING',
   LAYOUT_HOME_SUCCESS: 'LAYOUT_HOME_SUCCESS',
   LAYOUT_HOME_FAILURE: 'LAYOUT_HOME_FAILURE',
+  FETCH_PRODUCTS_FAILURE: 'FETCH_PRODUCTS_FAILURE',
 };
 
 export const actions = {
@@ -63,31 +83,28 @@ export const actions = {
 
   fetchProductsLayout: (dispatch, categoryId = '', tagId = '', page, index) => {
     // eslint-disable-next-line no-shadow
-    return dispatch => {
+    return async dispatch => {
       dispatch({ type: types.LAYOUT_FETCHING, extra: { index } });
 
-      return WooWorker.productsByCategoryTag(
+      const { data, error } = await ProductAPI.fetchProductsByCategoryTag({
         categoryId,
         tagId,
-        null,
-        null,
-        null,
-        10,
         page,
-      ).then(json => {
-        if (json === undefined) {
-          dispatch(actions.fetchProductsFailure(Languages.getDataError));
-        } else if (json.code) {
-          dispatch(actions.fetchProductsFailure(json.message));
-        } else {
-          dispatch({
-            type:
-              page > 1 ? types.LAYOUT_FETCH_MORE : types.LAYOUT_FETCH_SUCCESS,
-            payload: json,
-            extra: { index },
-            finish: json.length === 0,
-          });
-        }
+        perPage: 10,
+      });
+
+      if (error) {
+        dispatch(actions.fetchProductsFailure(mapNetworkErrorMessage(error)));
+        return;
+      }
+
+      const products = Array.isArray(data) ? data : [];
+
+      dispatch({
+        type: page > 1 ? types.LAYOUT_FETCH_MORE : types.LAYOUT_FETCH_SUCCESS,
+        payload: products,
+        extra: { index },
+        finish: products.length === 0,
       });
     };
   },
@@ -100,28 +117,27 @@ export const actions = {
     index,
   ) => {
     dispatch({ type: types.LAYOUT_FETCHING, extra: { index } });
-    const json = await WooWorker.productsByCategoryTag(
+
+    const { data, error } = await ProductAPI.fetchProductsByCategoryTag({
       categoryId,
       tagId,
-      null,
-      null,
-      null,
-      10,
       page,
-    );
+      perPage: 10,
+    });
 
-    if (json === undefined) {
-      dispatch(actions.fetchProductsFailure(Languages.getDataError));
-    } else if (json.code) {
-      dispatch(actions.fetchProductsFailure(json.message));
-    } else {
-      dispatch({
-        type: page > 1 ? types.LAYOUT_FETCH_MORE : types.LAYOUT_FETCH_SUCCESS,
-        payload: json,
-        extra: { index },
-        finish: json.length === 0,
-      });
+    if (error) {
+      dispatch(actions.fetchProductsFailure(mapNetworkErrorMessage(error)));
+      return;
     }
+
+    const products = Array.isArray(data) ? data : [];
+
+    dispatch({
+      type: page > 1 ? types.LAYOUT_FETCH_MORE : types.LAYOUT_FETCH_SUCCESS,
+      payload: products,
+      extra: { index },
+      finish: products.length === 0,
+    });
   },
 
   fetchProductsFailure: error => ({
@@ -231,6 +247,20 @@ export const reducer = (state = initialState, action) => {
       return {
         ...state,
         initializing: false,
+      };
+    }
+
+
+    case types.FETCH_PRODUCTS_FAILURE: {
+      const layout = state.layout.map(item => ({
+        ...item,
+        isFetching: false,
+      }));
+
+      return {
+        ...state,
+        layout,
+        error: action.error,
       };
     }
 

@@ -71,6 +71,7 @@ import BlogList from './BlogList';
 import TabBarIconHome from './TabBarIconHome';
 import PickerBox from './PickerBox';
 import SelectCountry from './SelectCountry';
+import NetworkErrorBanner from './NetworkErrorBanner';
 
 export {
   ProductList,
@@ -144,4 +145,5 @@ export {
   TabBarIconHome,
   PickerBox,
   SelectCountry,
+  NetworkErrorBanner,
 };

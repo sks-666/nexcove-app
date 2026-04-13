@@ -3,6 +3,27 @@
 import { Constants, Languages } from '@common';
 import moment from 'moment';
 import { WooWorker } from 'api-ecommerce';
+import ProductAPI from '@services/ProductAPI';
+
+
+const mapProductErrorMessage = error => {
+  if (!error) {
+    return Languages.ProductsLoadError || Languages.ErrorMessageRequest;
+  }
+
+  switch (error.type) {
+    case 'NETWORK_ERROR':
+      return Languages.NoConnection;
+    case 'TIMEOUT_ERROR':
+      return Languages.RequestTakingTooLong;
+    case 'HTTP_ERROR':
+      return error.status >= 500
+        ? Languages.ServerErrorTryLater
+        : error.message || Languages.ProductsLoadError;
+    default:
+      return error.message || Languages.ProductsLoadError;
+  }
+};
 
 const types = {
   FETCH_PRODUCTS_PENDING: 'FETCH_PRODUCTS_PENDING',
@@ -213,32 +234,44 @@ export const actions = {
   },
   fetchProductRelated: async (dispatch, product) => {
     dispatch({ type: types.FETCH_PRODUCTS_RELATED_PENDING });
-    const categories = product.categories;
-    if (categories.length > 0) {
-      const categoryId = categories[0].id;
-      const json = await WooWorker.productsByCategoryId(categoryId, 10, 1);
-      if (json === undefined) {
-        dispatch({
-          type: types.FETCH_PRODUCTS_RELATED_FAIL,
-          message: Languages.ErrorMessageRequest,
-        });
-      } else if (json.code) {
-        dispatch({
-          type: types.FETCH_PRODUCTS_RELATED_FAIL,
-          message: json.message,
-        });
-      } else {
-        dispatch({
-          type: types.FETCH_PRODUCTS_RELATED_SUCCESS,
-          productRelated: json,
-        });
-      }
-    } else {
+
+    if (Array.isArray(product)) {
       dispatch({
         type: types.FETCH_PRODUCTS_RELATED_SUCCESS,
         productRelated: [],
       });
+      return;
     }
+
+    const categories = product?.categories || [];
+    if (categories.length === 0) {
+      dispatch({
+        type: types.FETCH_PRODUCTS_RELATED_SUCCESS,
+        productRelated: [],
+      });
+      return;
+    }
+
+    const categoryId = categories[0].id;
+    const { data, error } = await ProductAPI.fetchProductsByCategoryTag({
+      categoryId,
+      tagId: '',
+      page: 1,
+      perPage: 10,
+    });
+
+    if (error) {
+      dispatch({
+        type: types.FETCH_PRODUCTS_RELATED_FAIL,
+        error: mapProductErrorMessage(error),
+      });
+      return;
+    }
+
+    dispatch({
+      type: types.FETCH_PRODUCTS_RELATED_SUCCESS,
+      productRelated: Array.isArray(data) ? data : [],
+    });
   },
   cleanOldCoupon: async dispatch => {
     dispatch({ type: types.CLEAN_OLD_COUPON });

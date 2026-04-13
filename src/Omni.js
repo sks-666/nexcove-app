@@ -13,6 +13,8 @@ import { Images, Constants, Config } from '@common';
 import _Validate from './utils/Validate';
 import _BlockTimer from './utils/BlockTimer';
 import _FacebookAPI from './services/FacebookAPI';
+import httpClient from './services/httpClient';
+import NetworkTelemetry from './services/NetworkTelemetry';
 
 // const { actions: SideMenuActions } = require('@redux/SideMenuRedux')
 
@@ -38,6 +40,7 @@ export function connectConsoleToReactotron() {
 export const log = _log;
 export const warn = _warn;
 export const error = _error;
+export const getNetworkTelemetry = () => NetworkTelemetry.snapshot();
 
 /**
  * An async fetch with error catch
@@ -46,15 +49,21 @@ export const error = _error;
  * @returns {Promise.<*>}
  */
 export const request = async (url, data = {}) => {
-  try {
-    _warn(url);
-    const response = await fetch(url, data);
-    _warn(response);
-    return await response.json();
-  } catch (err) {
-    _error(err);
-    return { error: err };
+  const { data: responseData, error: requestError, status, meta } = await httpClient(
+    url,
+    data,
+  );
+
+  if (requestError) {
+    _error({ requestError, status, meta });
+    return {
+      error: requestError.message,
+      errorType: requestError.type,
+      requestId: requestError.requestId,
+    };
   }
+
+  return responseData;
 };
 
 // Drawer
