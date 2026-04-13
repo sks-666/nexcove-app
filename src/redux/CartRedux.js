@@ -2,7 +2,28 @@
 
 import { Constants, Tools, Languages } from '@common';
 import { WooWorker } from 'api-ecommerce';
+import CheckoutAPI from '@services/CheckoutAPI';
 import Validate from '../utils/Validate.js';
+
+
+const mapCheckoutErrorMessage = error => {
+  if (!error) {
+    return Languages.CreateOrderError;
+  }
+
+  switch (error.type) {
+    case 'NETWORK_ERROR':
+      return Languages.NoConnection;
+    case 'TIMEOUT_ERROR':
+      return Languages.RequestTakingTooLongRetrying;
+    case 'HTTP_ERROR':
+      return error.status >= 500
+        ? Languages.ServerErrorTryLater
+        : error.message || Languages.CreateOrderError;
+    default:
+      return error.message || Languages.CreateOrderError;
+  }
+};
 
 const types = {
   ADD_CART_ITEM: 'ADD_CART_ITEM',
@@ -97,17 +118,26 @@ export const actions = {
   },
   createNewOrder: async (dispatch, payload) => {
     dispatch({ type: types.CREATE_NEW_ORDER_PENDING });
-    const json = await WooWorker.createOrder(payload);
 
-    if (json.hasOwnProperty('id')) {
-      // dispatch({type: types.EMPTY_CART});
-      dispatch({ type: types.CREATE_NEW_ORDER_SUCCESS, orderId: json.id });
-    } else {
+    const { data, error } = await CheckoutAPI.createOrder(payload);
+
+    if (error) {
       dispatch({
         type: types.CREATE_NEW_ORDER_ERROR,
-        message: Languages.CreateOrderError,
+        message: mapCheckoutErrorMessage(error),
       });
+      return;
     }
+
+    if (data?.id) {
+      dispatch({ type: types.CREATE_NEW_ORDER_SUCCESS, orderId: data.id });
+      return;
+    }
+
+    dispatch({
+      type: types.CREATE_NEW_ORDER_ERROR,
+      message: Languages.CreateOrderError,
+    });
   },
   getShippingMethod: async (dispatch, payload) => {
     dispatch({ type: types.GET_SHIPPING_METHOD_PENDING });

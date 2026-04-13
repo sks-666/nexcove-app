@@ -18,6 +18,7 @@ import MenuSide from '@components/LeftMenu/MenuOverlay';
 // import MenuSide from '@components/LeftMenu/MenuWide';
 
 import { toast, closeDrawer } from './Omni';
+import useNetworkStatus from './hooks/useNetworkStatus';
 
 const AR_LANGUAGE = 'ar';
 
@@ -46,6 +47,7 @@ const Router = props => {
   const language = useSelector(state => state.language);
   const introStatus = useSelector(state => state.user.finishIntro);
   const initializing = useSelector(state => state.layouts.initializing);
+  const { isConnected, isInternetReachable } = useNetworkStatus();
 
   React.useEffect(() => {
     let isMounted = true;
@@ -84,6 +86,11 @@ const Router = props => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+
+  React.useEffect(() => {
+    updateConnectionStatus(Boolean(isConnected && isInternetReachable));
+  }, [isConnected, isInternetReachable, updateConnectionStatus]);
 
   const goToScreen = (routeName, params) => {
     if (!navigationRef?.current) {
