@@ -1,5 +1,5 @@
 /** @format */
 
-import * as Facebook from 'expo-facebook';
+import FacebookAPI from '@services/FacebookAPI';
 
-export default Facebook;
+export default FacebookAPI;

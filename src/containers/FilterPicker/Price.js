@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { View, Text } from 'react-native';
-import Slider from 'react-native-fluid-slider';
+import Slider from '@compat/FluidSlider';
 
 import { Color, Styles, Tools, withTheme } from '@common';
 

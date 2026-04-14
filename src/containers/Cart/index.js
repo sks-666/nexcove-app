@@ -4,7 +4,7 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
-import ScrollableTabView from 'react-native-scrollable-tab-view';
+import ScrollableTabView from '@compat/ScrollableTabView';
 import { connect } from 'react-redux';
 import base64 from 'base-64';
 import Reactotron from 'reactotron-react-native';

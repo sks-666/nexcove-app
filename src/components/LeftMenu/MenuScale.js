@@ -4,7 +4,7 @@ import React, { PureComponent } from 'react';
 import { Platform } from 'react-native';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import SideMenu from 'react-native-drawer';
+import SideMenu from '@compat/SideMenu';
 import { Drawer } from '@components';
 import { Color } from '@common';
 

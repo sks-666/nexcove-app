@@ -2,7 +2,7 @@
 
 import React, { PureComponent } from 'react';
 import { View } from 'react-native';
-import ScrollableTabView from 'react-native-scrollable-tab-view';
+import ScrollableTabView from '@compat/ScrollableTabView';
 import { connect } from 'react-redux';
 import {
   PAYMENT_APPROVED_CODE,

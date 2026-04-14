@@ -5,11 +5,13 @@ import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { persistStore } from 'redux-persist';
 import { PersistGate } from 'redux-persist/es/integration/react';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 import * as Font from 'expo-font';
 import store from '@store/configureStore';
 import RootRouter from './src/Router';
 import './ReactotronConfig';
+import queryClient from './src/services/queryClient';
 
 function cacheFonts(fonts) {
   return fonts.map(font => Font.loadAsync(font));
@@ -18,7 +20,7 @@ function cacheFonts(fonts) {
 export default function App() {
   useEffect(() => {
     loadAssets();
-  });
+  }, []);
 
   const loadAssets = async () => {
     const fontAssets = cacheFonts([
@@ -51,9 +53,11 @@ export default function App() {
 
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <RootRouter />
-      </PersistGate>
+      <QueryClientProvider client={queryClient}>
+        <PersistGate loading={null} persistor={persistor}>
+          <RootRouter />
+        </PersistGate>
+      </QueryClientProvider>
     </Provider>
   );
 }
