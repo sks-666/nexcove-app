@@ -1,29 +1,10 @@
 /** @format */
 
 import { flatten } from 'lodash';
+import { WooWorker } from 'api-ecommerce';
+
 import { HorizonLayouts, Languages, Constants } from '@common';
-import ProductAPI from '@services/ProductAPI';
 import { getAppConfigJson } from '@app/services/Utils';
-
-
-const mapNetworkErrorMessage = error => {
-  if (!error) {
-    return Languages.getDataError;
-  }
-
-  switch (error.type) {
-    case 'NETWORK_ERROR':
-      return Languages.NoConnection;
-    case 'TIMEOUT_ERROR':
-      return Languages.RequestTakingTooLong;
-    case 'HTTP_ERROR':
-      return error.status >= 500
-        ? Languages.ServerErrorTryLater
-        : error.message || Languages.getDataError;
-    default:
-      return error.message || Languages.getDataError;
-  }
-};
 
 const types = {
   LAYOUT_FETCH_SUCCESS: 'LAYOUT_FETCH_SUCCESS',
@@ -82,28 +63,31 @@ export const actions = {
 
   fetchProductsLayout: (dispatch, categoryId = '', tagId = '', page, index) => {
     // eslint-disable-next-line no-shadow
-    return async dispatch => {
+    return dispatch => {
       dispatch({ type: types.LAYOUT_FETCHING, extra: { index } });
 
-      const { data, error } = await ProductAPI.fetchProductsByCategoryTag({
+      return WooWorker.productsByCategoryTag(
         categoryId,
         tagId,
+        null,
+        null,
+        null,
+        10,
         page,
-        perPage: 10,
-      });
-
-      if (error) {
-        dispatch(actions.fetchProductsFailure(mapNetworkErrorMessage(error)));
-        return;
-      }
-
-      const products = Array.isArray(data) ? data : [];
-
-      dispatch({
-        type: page > 1 ? types.LAYOUT_FETCH_MORE : types.LAYOUT_FETCH_SUCCESS,
-        payload: products,
-        extra: { index },
-        finish: products.length === 0,
+      ).then(json => {
+        if (json === undefined) {
+          dispatch(actions.fetchProductsFailure(Languages.getDataError));
+        } else if (json.code) {
+          dispatch(actions.fetchProductsFailure(json.message));
+        } else {
+          dispatch({
+            type:
+              page > 1 ? types.LAYOUT_FETCH_MORE : types.LAYOUT_FETCH_SUCCESS,
+            payload: json,
+            extra: { index },
+            finish: json.length === 0,
+          });
+        }
       });
     };
   },
@@ -116,27 +100,28 @@ export const actions = {
     index,
   ) => {
     dispatch({ type: types.LAYOUT_FETCHING, extra: { index } });
-
-    const { data, error } = await ProductAPI.fetchProductsByCategoryTag({
+    const json = await WooWorker.productsByCategoryTag(
       categoryId,
       tagId,
+      null,
+      null,
+      null,
+      10,
       page,
-      perPage: 10,
-    });
+    );
 
-    if (error) {
-      dispatch(actions.fetchProductsFailure(mapNetworkErrorMessage(error)));
-      return;
+    if (json === undefined) {
+      dispatch(actions.fetchProductsFailure(Languages.getDataError));
+    } else if (json.code) {
+      dispatch(actions.fetchProductsFailure(json.message));
+    } else {
+      dispatch({
+        type: page > 1 ? types.LAYOUT_FETCH_MORE : types.LAYOUT_FETCH_SUCCESS,
+        payload: json,
+        extra: { index },
+        finish: json.length === 0,
+      });
     }
-
-    const products = Array.isArray(data) ? data : [];
-
-    dispatch({
-      type: page > 1 ? types.LAYOUT_FETCH_MORE : types.LAYOUT_FETCH_SUCCESS,
-      payload: products,
-      extra: { index },
-      finish: products.length === 0,
-    });
   },
 
   fetchProductsFailure: error => ({
