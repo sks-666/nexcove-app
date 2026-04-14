@@ -1,20 +1,33 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src/",
+    "baseUrl": ".",
     "paths": {
-      "@common": ["common"],
-      "@containers": ["containers"],
-      "@components": ["components"],
-      "@navigation": ["navigation"],
-      "@images": ["images"],
-      "@services": ["services"],
-      "@selectors": ["selectors"],
-      "@store": ["store"],
-      "@utils": ["utils"],
-      "@ExpoCustom": ["Expo"],
-      "@redux": ["redux"],
-
-      "@app/*": ["*"]
+      "@app/*": ["src/*"],
+      "@assets/*": ["assets/*"],
+      "@common/*": ["src/common/*"],
+      "@containers/*": ["src/containers/*"],
+      "@components/*": ["src/components/*"],
+      "@navigation/*": ["src/navigation/*"],
+      "@images/*": ["src/images/*"],
+      "@services/*": ["src/services/*"],
+      "@selectors/*": ["src/selectors/*"],
+      "@store/*": ["src/store/*"],
+      "@utils/*": ["src/utils/*"],
+      "@ExpoCustom/*": ["src/Expo/*"],
+      "@redux/*": ["src/redux/*"],
+      "@compat/*": ["src/compat/*"],
+      "@common": ["src/common/index"],
+      "@containers": ["src/containers/index"],
+      "@components": ["src/components/index"],
+      "@navigation": ["src/navigation/index"],
+      "@images": ["src/images/index"],
+      "@services": ["src/services/index"],
+      "@selectors": ["src/selectors/index"],
+      "@store": ["src/store"],
+      "@utils": ["src/utils"],
+      "@ExpoCustom": ["src/Expo/index"],
+      "@redux": ["src/redux/index"],
+      "@compat": ["src/compat"]
     }
   },
   "exclude": ["node_modules"]

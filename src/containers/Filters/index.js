@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 
 import { Languages, withTheme, Tools, Color } from '@common';
 import { ProductCatalog, ProductTags } from '@components';
-import Slider from 'react-native-fluid-slider';
+import Slider from '@compat/FluidSlider';
 import styles from './styles';
 
 class Filters extends React.PureComponent {

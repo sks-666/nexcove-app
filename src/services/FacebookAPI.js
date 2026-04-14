@@ -1,57 +1,68 @@
 /** @format */
 
-import * as Facebook from 'expo-facebook';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 
 import { Config } from '@common';
-import { toast, log } from '@app/Omni';
+import { log, toast } from '@app/Omni';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const FB_OAUTH_VERSION = 'v19.0';
+const redirectUri = AuthSession.makeRedirectUri();
+
+let currentAccessToken = null;
+
+const getAuthUrl = () => {
+  const appId = Config?.appFacebookId;
+
+  if (!appId) {
+    return null;
+  }
+
+  return `https://www.facebook.com/${FB_OAUTH_VERSION}/dialog/oauth?client_id=${encodeURIComponent(
+    appId,
+  )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=public_profile,email`;
+};
 
 class FacebookAPI {
   async login() {
-    await Facebook.initializeAsync({
-      appId: Config.appFacebookId,
-      appName: 'MStore',
+    const authUrl = getAuthUrl();
+
+    if (!authUrl) {
+      toast('Facebook login is not configured');
+      return null;
+    }
+
+    const result = await AuthSession.startAsync({
+      authUrl,
+      returnUrl: redirectUri,
     });
 
-    const ask = await Facebook.logInWithReadPermissionsAsync({
-      permissions: ['public_profile', 'email'],
-    });
-    const { type } = ask;
-
-    if (type === 'success') {
-      const { token } = ask;
-
+    if (result?.type === 'success') {
+      const token = result?.params?.access_token || null;
+      currentAccessToken = token;
       return token;
     }
+
     return null;
   }
 
   logout() {
-    Facebook.logOut();
+    currentAccessToken = null;
   }
 
   async getAccessToken() {
-    return Facebook.getCurrentFacebook();
+    return currentAccessToken;
   }
 
-  async shareLink(link, desc) {
-    const shareLinkContent = {
-      contentType: 'link',
-      contentUrl: link,
-      contentDescription: desc,
-    };
-    try {
-      const canShow = await Facebook.canShow(shareLinkContent);
-      if (canShow) {
-        const result = await Facebook.show(shareLinkContent);
-        if (!result.isCancelled) {
-          toast('Post shared');
-          log(`Share a post with id: ${result.postId}`);
-        }
-      }
-    } catch (error) {
-      toast('An error occurred. Please try again later');
-      error(`Share post fail with error: ${error}`);
+  async shareLink(link) {
+    if (!link) {
+      return;
     }
+
+    toast('Facebook native share is deprecated in this build');
+    log(`Requested share for link: ${link}`);
   }
 }
 

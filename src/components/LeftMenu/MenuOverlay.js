@@ -3,7 +3,7 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import SideMenu from 'react-native-drawer';
+import SideMenu from '@compat/SideMenu';
 
 import { withTheme, warn } from '@common';
 import { Drawer } from '@components';

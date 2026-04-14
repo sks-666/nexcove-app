@@ -1,59 +1,39 @@
 /** @format */
+
 import Reactotron from 'reactotron-react-native';
-import { applyMiddleware, compose, createStore } from 'redux';
-import thunk from 'redux-thunk';
+import { configureStore } from '@reduxjs/toolkit';
 
 import reducers from '@redux';
 import { Constants } from '@common';
 import { connectConsoleToReactotron, DEV_ENV } from '@app/Omni';
 import './../../ReactotronConfig';
 
-const middleware = [
-  thunk,
-  // more middleware
-];
+const createAppStore = () => {
+  const isReactotronEnabled = DEV_ENV && Constants.useReactotron;
 
-// const store = createStore(reducers, {}, applyMiddleware(...middleware));
-
-const configureStore = () => {
-  let store = null;
-  if (DEV_ENV) {
-    if (Constants.useReactotron) {
-      store = createStore(
-        reducers,
-        {},
-        compose(applyMiddleware(...middleware), Reactotron.createEnhancer()),
-      );
-      connectConsoleToReactotron();
-    } else {
-      const composeEnhancers =
-        window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-      store = composeEnhancers(applyMiddleware(...middleware))(createStore)(
-        reducers,
-      );
-
-      if (module.hot) {
-        // Enable Webpack hot module replacement for reducers
-        module.hot.accept(reducers, () => {
-          const nextRootReducer = reducers;
-          store.replaceReducer(nextRootReducer);
-        });
-      }
-
-      // show network react-native-debugger
-      // only show on IOS, android bug
-      // if (Platform.OS === "ios") {
-      global.XMLHttpRequest = global.originalXMLHttpRequest
-        ? global.originalXMLHttpRequest
-        : global.XMLHttpRequest;
-      global.FormData = global.originalFormData
-        ? global.originalFormData
-        : global.FormData;
+  const enhancers = defaultEnhancers => {
+    if (isReactotronEnabled && Reactotron?.createEnhancer) {
+      return [...defaultEnhancers, Reactotron.createEnhancer()];
     }
-  } else {
-    store = compose(applyMiddleware(...middleware))(createStore)(reducers);
+    return defaultEnhancers;
+  };
+
+  const store = configureStore({
+    reducer: reducers,
+    devTools: DEV_ENV,
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({
+        serializableCheck: false,
+        immutableCheck: false,
+      }),
+    enhancers,
+  });
+
+  if (isReactotronEnabled) {
+    connectConsoleToReactotron();
   }
+
   return store;
 };
 
-export default configureStore();
+export default createAppStore();
