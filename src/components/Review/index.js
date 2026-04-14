@@ -58,8 +58,16 @@ class Review extends PureComponent {
         verified: 0,
       }),
     };
-    CustomAPI.createComment(commentData).then(data => {
-      if (data.status == 'ok') {
+    CustomAPI.createComment(commentData).then(response => {
+      if (response?.error) {
+        toast(response.error.message || Languages.ErrorMessageRequest);
+        this.setState({ submitting: false });
+        return;
+      }
+
+      const payload = response?.data;
+
+      if (payload?.status == 'ok') {
         this.setState({
           addComment: true,
           txtComment: '',
@@ -67,7 +75,7 @@ class Review extends PureComponent {
         toast(Languages.thanksForReview);
         Events.closeModalReview();
       } else {
-        toast(data?.message || '');
+        toast(payload?.message || Languages.ErrorMessageRequest);
       }
 
       this.setState({ submitting: false });

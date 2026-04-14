@@ -44,6 +44,11 @@ export default {
   ProductFeatures: 'Features',
   ErrorMessageRequest: "Can't get data from server",
   NoConnection: 'No internet connection',
+  RequestTakingTooLong: 'The server took too long to respond',
+  RequestTakingTooLongRetrying: 'The server took too long to respond',
+  ServerErrorTryLater: 'Server error, please try again later',
+  ProductsLoadError: 'Something went wrong while loading products',
+  CheckoutFailedTryAgain: 'Checkout could not be completed, please try again',
   ProductRelated: 'Related Products',
 
   // Cart

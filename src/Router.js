@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, StatusBar, I18nManager } from 'react-native';
 import { WooWorker } from 'api-ecommerce';
-import NetInfo from '@react-native-community/netinfo';
 import { NavigationContainer } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { Config, Device, Styles, themes, ThemeProvider } from '@common';
 import { MyToast, SplashScreen } from '@containers';
-import { AppIntro, ModalReview } from '@components';
+import { AppIntro, ModalReview, NetworkErrorBanner } from '@components';
 import Navigation, { navigationRef } from '@navigation';
 import * as LayoutRedux from '@redux/LayoutRedux';
 import * as NetInfoRedux from '@redux/NetInfoRedux';
@@ -18,6 +17,7 @@ import MenuSide from '@components/LeftMenu/MenuOverlay';
 // import MenuSide from '@components/LeftMenu/MenuWide';
 
 import { toast, closeDrawer } from './Omni';
+import useNetworkStatus from './hooks/useNetworkStatus';
 
 const AR_LANGUAGE = 'ar';
 
@@ -46,6 +46,7 @@ const Router = props => {
   const language = useSelector(state => state.language);
   const introStatus = useSelector(state => state.user.finishIntro);
   const initializing = useSelector(state => state.layouts.initializing);
+  const { isConnected, isInternetReachable } = useNetworkStatus();
 
   React.useEffect(() => {
     let isMounted = true;
@@ -68,10 +69,6 @@ const Router = props => {
       // initial json file from server or local
       await fetchHomeLayouts(Config.HomeCaching.url, Config.HomeCaching.enable);
 
-      const netInfo = await NetInfo.fetch();
-
-      updateConnectionStatus(netInfo.type !== 'none');
-
       if (isMounted) {
         setLoading(false);
       }
@@ -84,6 +81,10 @@ const Router = props => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  React.useEffect(() => {
+    updateConnectionStatus(Boolean(isConnected && isInternetReachable));
+  }, [isConnected, isInternetReachable, updateConnectionStatus]);
 
   const goToScreen = (routeName, params) => {
     if (!navigationRef?.current) {
@@ -120,6 +121,9 @@ const Router = props => {
               hidden={Device.isIphoneX ? false : !Config.showStatusBar}
             />
             <MyToast />
+            <NetworkErrorBanner
+              isConnected={Boolean(isConnected && isInternetReachable)}
+            />
 
             <NavigationContainer ref={navigationRef}>
               <Navigation theme={theme} />

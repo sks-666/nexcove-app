@@ -4,6 +4,36 @@ import Images from './Images';
 import Constants from './Constants';
 import Icons from './Icons';
 
+const isValidUrl = value => {
+  try {
+    const parsed = new URL(value);
+    return Boolean(parsed?.host);
+  } catch {
+    return false;
+  }
+};
+
+const normalizeHttpsUrl = input => {
+  const trimmed = String(input || '').trim().replace(/\/+$/, '');
+  const fallback = 'https://nexcove.com';
+
+  if (!trimmed) {
+    return fallback;
+  }
+
+  const httpsUrl = trimmed.startsWith('https://')
+    ? trimmed
+    : trimmed.replace(/^http:\/\//i, 'https://');
+
+  return isValidUrl(httpsUrl) ? httpsUrl : fallback;
+};
+
+const BASE_URL = normalizeHttpsUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
+const MARKETING_URL = normalizeHttpsUrl(
+  process.env.EXPO_PUBLIC_MARKETING_URL || BASE_URL,
+);
+const API_VERSION = process.env.EXPO_PUBLIC_WOO_API_VERSION || 'wp-json/wc/v3';
+
 const consumerKey = 'ck_c16d601d14a44c8080418c1ab9336b72ae8faff2';
 const consumerSecret = 'cs_1c11c4d0ee3bef861421bf3622f20f6b49c8497a';
 
@@ -12,9 +42,17 @@ export default {
    * Step 1: change to your website URL and the wooCommerce API consumeKey
    */
   WooCommerce: {
-    url: 'https://mstore.io/',
+    url: BASE_URL,
     consumerKey,
     consumerSecret,
+    apiVersion: API_VERSION,
+  },
+
+  Network: {
+    timeoutMs: 15000,
+    retries: 2,
+    retryDelayMs: 500,
+    maxResponseSnippet: 300,
   },
 
   /**
@@ -144,7 +182,7 @@ export default {
   },
   appFacebookId: '501847534057136',
   CustomPages: { contact_id: 10941 },
-  WebPages: { marketing: 'http://inspireui.com' },
+  WebPages: { marketing: MARKETING_URL },
 
   intro: [
     {
